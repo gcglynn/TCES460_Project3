@@ -21,14 +21,7 @@ BALL_MAX_VAL = 240
 PRINT_BALL_COORDS = True
 MARK_BALL = True
 BALL_COLOR = (255, 0, 0)
-
-PLAT_MIN_VAL = 63
-PLAT_MAX_VAL = 255
-PLAT_MIN_SAT = 0
-PLAT_MAX_SAT = 63
-PRINT_PLAT_COORDS = False
-MARK_PLAT = False
-PLAT_COLOR = (0, 0, 255)
+MASK_IMAGE = True
 
 ERODE_KERNEL_SIZE = 5
 
@@ -76,6 +69,30 @@ sendFrame.frame = None
 sendFrame.number = 0
 sendFrame.run = True
 
+xRaw = 0
+yRaw = 0
+xBall = 0
+yBall = 0
+def getBallPos():
+    return (xBall, yBall)
+
+frameCount = 0
+def getFrameNumber():
+    return frameCount
+
+edgeX0 = 0
+edgeX1 = FRAME_WIDTH
+edgeY0 = 0
+edgeY1 = FRAME_HEIGHT
+def Edge(name):
+    if name is "top-left":
+        edgeX0 = xRaw
+        edgeY0 = yRaw
+    if name is "bottom-right":
+        edgeX1 = xRaw
+        edgeY1 = yRaw
+    else:
+        print("Edge: bad name")
 
 # Setup camera
 cam = cv2.VideoCapture(0)
@@ -86,13 +103,9 @@ if not cam.isOpened():
 cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
 cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
-# Start Network thread
-tcpThread = threading.Thread(target = sendFrame)
-tcpThread.start()
 
-
-frameCount = 0
-try:
+def captureLoop():
+  try:
     while True:
         frameStart = int(round(time.time() * 1000))
         times = {}
@@ -116,42 +129,26 @@ try:
         ball = cv2.erode(ball, kernel, iterations = 1)
         timepoint("FindBall")
         
-#        # Detect the white-ish platform
-#        light = cv2.inRange(val, PLAT_MIN_VAL, PLAT_MAX_VAL)
-#        unsaturated = cv2.inRange(sat, PLAT_MIN_SAT, PLAT_MAX_SAT)
-#        platform = cv2.bitwise_and(light, unsaturated)
-#        platform = cv2.erode(platform, kernel, iterations = 1)
-
-#        contours, hierarchy = cv2.findContours(platform, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#        if len(contours) > 0:
-#            x,y,w,h = cv2.boundingRect(contours[0])
-#        timepoint("FindPlatform")
-#        if PRINT_PLAT_COORDS:
-#            print("x: " + str(x) + " y: " + str(y) + " w: " + str(w) + " h: " + str(h))
-#            timepoint("PrintPlatform")
-
         moments = cv2.moments(ball)
-#        outputFrame = frame
-#        outputFrame = cv2.bitwise_and(frame, frame, mask=ball)
-#        outputFrame = platform
 
-#        if MARK_PLAT:
-#            cv2.rectangle(outputFrame, (x,y), (x+w,y+h), PLAT_COLOR, 2)
-#            timepoint("MarkPlatform")
+        if MASK_IMAGE:
+            outputFrame = cv2.bitwise_and(frame, frame, mask=ball)
+        else:
+            outputFrame = frame
 
         if moments['m00'] != 0:
             xRaw = int(moments['m10'] / moments['m00'])
             yRaw = int(moments['m01'] / moments['m00'])
 
-            xBall = (xRaw - x) / (1.0 * w) * 2 - 1;
-            yBall = (yRaw - y) / (1.0 * h) * 2 - 1; 
+            xBall = (xRaw - edgeX0) / (1.0 * edgeX1 - edgeX0) * 2 - 1;
+            yBall = (yRaw - edgeY0) / (1.0 * edgeY1 - edgeY0) * 2 - 1; 
 
             if PRINT_BALL_COORDS:
-                if w > FRAME_WIDTH / 2 and h > FRAME_HEIGHT / 2:
+#                if w > FRAME_WIDTH / 2 and h > FRAME_HEIGHT / 2:
                     print("x: " + "{:.3f}".format(xBall) + "\ty: " + "{:.3f}".format(yBall))
                     timepoint("PrintBall")
-                else:
-                    print("Frame is too small")
+#                else:
+#                    print("Frame is too small")
 
             if MARK_BALL:
                 cv2.circle(outputFrame, (xRaw, yRaw), 16, BALL_COLOR, -1)
@@ -170,10 +167,19 @@ try:
             frameDelta = int(round(time.time() * 1000)) - frameStart
             print(str(1000 / frameDelta) + " FPS")
 
-except KeyboardInterrupt:
+  except KeyboardInterrupt:
     pass
 
-sendFrame.run = False
+  sendFrame.run = False
 
-print("Exiting")
+  print("Exiting")
+
+
+if __name__ == "__main__":
+ 
+    # Start Network thread
+    tcpThread = threading.Thread(target = sendFrame)
+    tcpThread.start()   
+    captureLoop()
+
 
