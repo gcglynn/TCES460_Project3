@@ -21,7 +21,7 @@ BALL_MAX_VAL = 240
 PRINT_BALL_COORDS = True
 MARK_BALL = True
 BALL_COLOR = (255, 0, 0)
-MASK_IMAGE = True
+MASK_IMAGE = False 
 
 ERODE_KERNEL_SIZE = 5
 
@@ -105,6 +105,7 @@ cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
 
 def captureLoop():
+  global frameCount 
   try:
     while True:
         frameStart = int(round(time.time() * 1000))
