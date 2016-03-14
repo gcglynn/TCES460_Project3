@@ -19,6 +19,7 @@ BALL_MAX_SAT = 255
 BALL_MIN_VAL = 32
 BALL_MAX_VAL = 240
 PRINT_BALL_COORDS = True
+PRINT_BALL_PIXEL_COORDS = False
 MARK_BALL = True
 BALL_COLOR = (255, 0, 0)
 MASK_IMAGE = False 
@@ -84,6 +85,17 @@ edgeX0 = 0
 edgeX1 = FRAME_WIDTH
 edgeY0 = 0
 edgeY1 = FRAME_HEIGHT
+
+edgeFile = open('edges.txt', 'r')
+if edgeFile:
+    edges = edgeFile.read().split()
+    edgeX0 = int(edges[0])
+    edgeX1 = int(edges[1])
+    edgeY0 = int(edges[2])
+    edgeY1 = int(edges[3])
+    print("Read edges.txt:")
+    print(edges)
+
 def Edge(name):
     if name is "top-left":
         edgeX0 = xRaw
@@ -145,11 +157,10 @@ def captureLoop():
             yBall = (yRaw - edgeY0) / (1.0 * edgeY1 - edgeY0) * 2 - 1; 
 
             if PRINT_BALL_COORDS:
-#                if w > FRAME_WIDTH / 2 and h > FRAME_HEIGHT / 2:
-                    print("x: " + "{:.3f}".format(xBall) + "\ty: " + "{:.3f}".format(yBall))
-                    timepoint("PrintBall")
-#                else:
-#                    print("Frame is too small")
+                print("x: " + "{:.3f}".format(xBall) + "\ty: " + "{:.3f}".format(yBall))
+                timepoint("PrintBall")
+            if PRINT_BALL_PIXEL_COORDS:
+                print("xRaw: " + str(xRaw) + "\tyRaw: " + str(yRaw))
 
             if MARK_BALL:
                 cv2.circle(outputFrame, (xRaw, yRaw), 16, BALL_COLOR, -1)
