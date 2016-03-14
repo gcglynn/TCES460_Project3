@@ -94,7 +94,7 @@ if edgeFile:
     edgeY0 = int(edges[2])
     edgeY1 = int(edges[3])
     print("Read edges.txt:")
-    print(edges)
+    print(edges[:4])
 
 def Edge(name):
     if name is "top-left":

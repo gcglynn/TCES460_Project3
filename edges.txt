@@ -1,1 +1,9 @@
 195 431 137 390
+X0  X1  Y0  Y1
+Only the first four whitespace-separated tokens are read from this file.
+They are parsed as integers.
+X0 is the left edge of the board, corresponding to an output of -1.
+X1 is the right edge, output of 1.
+Same for Y0 and Y1.
+If X1 is less than X0, the x output will be inverted.
+If X0 = X1, there will likely be a divide by zero error.
