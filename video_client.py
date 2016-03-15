@@ -24,9 +24,9 @@ MARK_BALL = False
 BALL_COLOR = (0, 0, 255)
 MASK_IMAGE = True
 
-ERODE_KERNEL_SIZE = 5
+ERODE_KERNEL_SIZE = 3
 
-JPEG_QUALITY = 90
+JPEG_QUALITY = 50
 
 PRINT_TIMES = False
 PRINT_FPS = True
@@ -34,6 +34,7 @@ PRINT_FPS = True
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
+run = True
 
 def timepoint(name):
     ms = int(round(time.time() * 1000))
@@ -44,31 +45,35 @@ times = {}
 timepoint.lastTime = 0
 
 def sendFrame():
-    print("Connecting to " + TCP_IP + ":" + str(PORT))
-    sock = socket.socket()
-    sock.connect((TCP_IP, PORT))
-    print("Connected")
-    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
-    while sendFrame.run:
-        if sendFrame.frame is not None:
-            outputFrame = sendFrame.frame
-            sendFrame.frame = None
+    global run
+    try:
+        print("Connecting to " + TCP_IP + ":" + str(PORT))
+        sock = socket.socket()
+        sock.connect((TCP_IP, PORT))
+        print("Connected")
+        encode_param=[int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY]
+        while run:
+            if sendFrame.frame is not None:
+                outputFrame = sendFrame.frame
+                sendFrame.frame = None
 
-            result, imgencode = cv2.imencode('.jpg', outputFrame, encode_param)
-            data = numpy.array(imgencode)
-            stringData = data.tostring()
+                result, imgencode = cv2.imencode('.jpg', outputFrame, encode_param)
+                data = numpy.array(imgencode)
+                stringData = data.tostring()
 
-            print("Sending frame " + str(sendFrame.number))
+                print("Sending frame " + str(sendFrame.number))
 
-            sock.send( str(len(stringData)).ljust(16));
-            sock.send( stringData);
+                sock.send( str(len(stringData)).ljust(16));
+                sock.send( stringData);
 
-        time.sleep(1.01)
-    sock.shutdown(2)
-    sock.close()
+            time.sleep(1.01)
+        sock.shutdown(2)
+        sock.close()
+    except KeyboardInterrupt:
+        pass
+    run = False
 sendFrame.frame = None        
 sendFrame.number = 0
-sendFrame.run = True
 
 xRaw = 0
 yRaw = 0
@@ -106,85 +111,104 @@ def Edge(name):
     else:
         print("Edge: bad name")
 
-# Setup camera
-cam = cv2.VideoCapture(0)
-if not cam.isOpened():
-    print("Camera not open")
-    exit()
-
-cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
-cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-
-
 def captureLoop():
-  global frameCount 
-  try:
-    while True:
-        frameStart = int(round(time.time() * 1000))
-        times = {}
-        timepoint("Start")
+    global run
+    try:
+        cam = cv2.VideoCapture(0)
+        if not cam.isOpened():
+            print("Camera not open")
+            exit()
 
-        ret, frame = cam.read()
-        timepoint("Capture")
+        cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
+        cam.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
 
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        [hue, sat, val] = cv2.split(hsv)
-        timepoint("ToHSV")
+        while run:
+            if captureLoop.newFrame is None:
+                ret, f = cam.read()
+                captureLoop.newFrame = f
+            time.sleep(0.001)
+        cam.release()
+    except KeyboardInterrupt:
+        pass
+    run = False
+captureLoop.newFrame = None
+
+def processLoop():
+    global frameCount 
+    global run
+    try:
+        while run:
+            frameStart = int(round(time.time() * 1000))
+            times = {}
+            timepoint("Start")
+
+#        ret, frame = cam.read()
+#        timepoint("Capture")
         
-        kernel = numpy.ones((ERODE_KERNEL_SIZE, ERODE_KERNEL_SIZE),numpy.uint8)
+            if captureLoop.newFrame is None:
+                time.sleep(0.001)
+                continue
+            frame = captureLoop.newFrame
+            captureLoop.newFrame = None
 
-        #Detect the blue ball
-        blue = cv2.inRange(hue, BALL_MIN_HUE, BALL_MAX_HUE)
-        saturated = cv2.inRange(sat, BALL_MIN_SAT, BALL_MAX_SAT)
-        mediumLightness = cv2.inRange(val, BALL_MIN_VAL, BALL_MAX_VAL)
-        ball = cv2.bitwise_and(blue, saturated)
-        ball = cv2.bitwise_and(ball, mediumLightness)
-        ball = cv2.erode(ball, kernel, iterations = 1)
-        timepoint("FindBall")
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            [hue, sat, val] = cv2.split(hsv)
+            timepoint("ToHSV")
         
-        moments = cv2.moments(ball)
+            kernel = numpy.ones((ERODE_KERNEL_SIZE, ERODE_KERNEL_SIZE),numpy.uint8)
 
-        if MASK_IMAGE:
-            outputFrame = cv2.bitwise_and(frame, frame, mask=ball)
-        else:
-            outputFrame = frame
+            #Detect the blue ball
+            blue = cv2.inRange(hue, BALL_MIN_HUE, BALL_MAX_HUE)
+            saturated = cv2.inRange(sat, BALL_MIN_SAT, BALL_MAX_SAT)
+            mediumLightness = cv2.inRange(val, BALL_MIN_VAL, BALL_MAX_VAL)
+            ball = cv2.bitwise_and(blue, saturated)
+            ball = cv2.bitwise_and(ball, mediumLightness)
+            ball = cv2.erode(ball, kernel, iterations = 1)
+            timepoint("FindBall")
+        
+            moments = cv2.moments(ball)
 
-        if moments['m00'] != 0:
-            xRaw = int(moments['m10'] / moments['m00'])
-            yRaw = int(moments['m01'] / moments['m00'])
+            if MASK_IMAGE:
+                outputFrame = cv2.bitwise_and(frame, frame, mask=ball)
+            else:
+                outputFrame = frame
 
-            xBall = (xRaw - edgeX0) / (1.0 * edgeX1 - edgeX0) * 2 - 1;
-            yBall = (yRaw - edgeY0) / (1.0 * edgeY1 - edgeY0) * 2 - 1; 
+            if moments['m00'] != 0:
+                xRaw = int(moments['m10'] / moments['m00'])
+                yRaw = int(moments['m01'] / moments['m00'])
 
-            if PRINT_BALL_COORDS:
-                print("x: " + "{:.3f}".format(xBall) + "\ty: " + "{:.3f}".format(yBall))
-                timepoint("PrintBall")
-            if PRINT_BALL_PIXEL_COORDS:
-                print("xRaw: " + str(xRaw) + "\tyRaw: " + str(yRaw))
+                xBall = (xRaw - edgeX0) / (1.0 * edgeX1 - edgeX0) * 2 - 1;
+                yBall = (yRaw - edgeY0) / (1.0 * edgeY1 - edgeY0) * 2 - 1; 
 
-            if MARK_BALL:
-                cv2.circle(outputFrame, (xRaw, yRaw), 16, BALL_COLOR, -1)
+                if PRINT_BALL_COORDS:
+                    print("x: " + "{:.3f}".format(xBall) + "\ty: " + "{:.3f}".format(yBall))
+                    timepoint("PrintBall")
+                if PRINT_BALL_PIXEL_COORDS:
+                    print("xRaw: " + str(xRaw) + "\tyRaw: " + str(yRaw))
 
-                timepoint("MarkBall")
+                if MARK_BALL:
+                    cv2.circle(outputFrame, (xRaw, yRaw), 16, BALL_COLOR, -1)
 
-        sendFrame.number = frameCount
-        sendFrame.frame = outputFrame
+                    timepoint("MarkBall")
 
-        if PRINT_TIMES:
-            print(times)
+            sendFrame.number = frameCount
+            sendFrame.frame = outputFrame
 
-        frameCount = frameCount + 1
+            if PRINT_TIMES:
+                print(times)
 
-        if PRINT_FPS:
-            frameDelta = int(round(time.time() * 1000)) - frameStart
-            print(str(1000 / frameDelta) + " FPS")
+            frameCount = frameCount + 1
 
-  except KeyboardInterrupt:
-    pass
+            if PRINT_FPS:
+                frameDelta = int(round(time.time() * 1000)) - frameStart
+                print(str(1000 / frameDelta) + " FPS")
 
-  sendFrame.run = False
+    except KeyboardInterrupt:
+        pass
 
-  print("Exiting")
+    run = False
+
+    print("Exiting")
 
 
 if __name__ == "__main__":
@@ -192,6 +216,8 @@ if __name__ == "__main__":
     # Start Network thread
     tcpThread = threading.Thread(target = sendFrame)
     tcpThread.start()   
+    processThread = threading.Thread(target = processLoop)
+    processThread.start()
     captureLoop()
 
 
