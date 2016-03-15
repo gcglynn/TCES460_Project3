@@ -21,9 +21,13 @@ PRINT_BALL_COORDS = False
 PRINT_BALL_PIXEL_COORDS = True
 MARK_BALL = False
 BALL_COLOR = (0, 0, 255)
-MASK_IMAGE = True
+MASK_IMAGE = False
 
 ERODE_KERNEL_SIZE = 3
+
+MARK_FRAME = True
+FRAME_COLOR = (255, 0, 0)
+
 
 JPEG_QUALITY = 50
 
@@ -278,6 +282,9 @@ def processLoop():
                 if ENABLE_SERVOS:
                     xServo, yServo = controller(xBall, yBall)
                     setServos(xServo, yServo)
+
+            if MARK_FRAME:
+                cv2.rectangle(outputFrame, (min(edgeX0, edgeX1), min(edgeY0, edgeY1), (max(edgeX0, edgeX1), max(edgeY0, edgeY1)), FRAME_COLOR, 2)
 
             sendFrame.number = frameCount
             sendFrame.frame = outputFrame
