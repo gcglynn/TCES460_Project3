@@ -284,7 +284,7 @@ def processLoop():
                     setServos(xServo, yServo)
 
             if MARK_FRAME:
-                cv2.rectangle(outputFrame, (min(edgeX0, edgeX1), min(edgeY0, edgeY1), (max(edgeX0, edgeX1), max(edgeY0, edgeY1)), FRAME_COLOR, 2)
+                cv2.rectangle(outputFrame, (min(edgeX0, edgeX1), min(edgeY0, edgeY1)), (max(edgeX0, edgeX1), max(edgeY0, edgeY1)), FRAME_COLOR, 2)
 
             sendFrame.number = frameCount
             sendFrame.frame = outputFrame
