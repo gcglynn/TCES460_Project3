@@ -78,8 +78,18 @@ def controller(xBall, yBall):
                 yBall = 1
     x_range = (xBall+(xBall-prev_xBall)) * (MAX*X_DAMPENER)
     y_range = (yBall+(yBall-prev_yBall)) * (MAX*Y_DAMPENER)
+    if x_range > 500:
+    	x_range = 500
+    if x_range < -500:
+        x_range = -500
+    if y_range > 500:
+    	y_range = 500
+    if y_range < -500:
+    	y_range = -500
     x = int(x_range + HOME)
     y = int(y_range + HOME)
+    prev_xBall = xBall
+    prev_yBAll = yBall
     return x, y
 
 def setupServos():
@@ -262,9 +272,6 @@ def processLoop():
                 if ENABLE_SERVOS:
                     xServo, yServo = controller(xBall, yBall)
                     setServos(xServo, yServo)
-
-	    prev_xBall = xBall
-	    prev_yBall = yBall
 
             sendFrame.number = frameCount
             sendFrame.frame = outputFrame
