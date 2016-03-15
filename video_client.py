@@ -18,7 +18,7 @@ BALL_MAX_SAT = 255
 BALL_MIN_VAL = 63
 BALL_MAX_VAL = 255
 PRINT_BALL_COORDS = False
-PRINT_BALL_PIXEL_COORDS = False
+PRINT_BALL_PIXEL_COORDS = True
 MARK_BALL = False
 BALL_COLOR = (0, 0, 255)
 MASK_IMAGE = True
@@ -34,15 +34,21 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 ENABLE_SERVOS = True
+PRINT_SERVOS = True
+
 HOME = 1000
 MAX = 500
 MIN = 1500
+SWAP_XY = True
+INVERT_X = True
+INVERT_Y = False
+
 X_PIN = 5
-Y_PIN = 9
+Y_PIN = 6
 
 run = True
-x_servo=0
-y_servo=0
+x_servo=None
+y_servo=None
 
 def timepoint(name):
     ms = int(round(time.time() * 1000))
@@ -58,18 +64,25 @@ def controller(xBall, yBall):
     return x, y
 
 def setupServos():
+    global x_servo
+    global y_servo
     print("STUB: setupServos()")
     x_servo = servo_control.init_servo(X_PIN, HOME)
     y_servo = servo_control.init_servo(Y_PIN, HOME)
     servo_control.init_axis(x_servo, y_servo, MIN, MAX)
 
 def shutdownServos():
+    global x_servo
+    global y_servo   
     print("STUB: shutdownServos()")
     x_servo.enable(False)
     y_servo.enable(False)
 
 def setServos(x, y):
-    print("STUB: Updating servos to " + str(x) + ", " + str(y))
+    global x_servo
+    global y_servo     
+    if PRINT_SERVOS:
+        print("STUB: Updating servos to " + str(x) + ", " + str(y))
     servo_control.tilt(x_servo, x)
     servo_control.tilt(y_servo, y)
 
@@ -121,12 +134,31 @@ if edgeFile:
     print("Read edges.txt:")
     print(edges[:4])
 
+if SWAP_XY:
+    temp = edgeX0
+    edgeX0 = edgeY0
+    edgeY0 = edgeX0
+    temp = edgeX1
+    edgeX1 = edgeY1
+    edgeY1 = temp
+
+if INVERT_X:
+    temp = edgeX0
+    edgeX0 = edgeX1
+    edgeX1 = temp
+
+if INVERT_Y:
+    temp = edgeY0
+    edgeY0 = edgeY1
+    edgeY1 = temp
+
 def captureLoop():
     global run
     try:
         cam = cv2.VideoCapture(0)
         if not cam.isOpened():
             print("Camera not open")
+            run = False
             exit()
 
         cam.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
@@ -227,7 +259,8 @@ def processLoop():
 
 
 if __name__ == "__main__":
-    setupServos()
+    if ENABLE_SERVOS:
+        setupServos()
  
     # Start Network thread
     tcpThread = threading.Thread(target = sendFrame)

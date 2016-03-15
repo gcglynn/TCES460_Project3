@@ -1,10 +1,11 @@
+#!/usr/bin/python
 import mraa
 import time
 
 #short side = y
 #long side = x
 
-y_pin=9
+y_pin=6
 y_servo=0
 
 x_pin=5

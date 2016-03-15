@@ -1,4 +1,4 @@
-405 133 362 146
+133 405 146 362
 X0  X1  Y0  Y1
 Only the first four whitespace-separated tokens are read from this file.
 They are parsed as integers.

@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import mraa
 import time
 
@@ -58,4 +59,5 @@ def move_towards_center(servo, position, change, wait):
 
 #start of program
 #x_servo=init_servo(x_pin, home)
-y_servo=init_servo(y_pin, home)
+#y_servo=init_servo(y_pin, home)
+#time.sleep(5)
