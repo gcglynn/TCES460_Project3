@@ -5,8 +5,7 @@ import cv2
 import numpy
 import time
 import threading
-
-
+import servo_control
 
 # Parameters
 TCP_IP = '10.16.10.123'
@@ -35,8 +34,15 @@ FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 
 ENABLE_SERVOS = True
+HOME = 1000
+MAX = 500
+MIN = 1500
+X_PIN = 5
+Y_PIN = 9
 
 run = True
+x_servo=0
+y_servo=0
 
 def timepoint(name):
     ms = int(round(time.time() * 1000))
@@ -47,18 +53,25 @@ times = {}
 timepoint.lastTime = 0
 
 def controller(xBall, yBall):
-    x = int(xBall * 500 + 1000)
-    y = int(yBall * 500 + 1000)
+    x = int(xBall * MAX + HOME)
+    y = int(yBall * MAX + HOME)
     return x, y
 
 def setupServos():
     print("STUB: setupServos()")
+    x_servo = servo_control.init_servo(X_PIN, HOME)
+    y_servo = servo_control.init_servo(Y_PIN, HOME)
+    servo_control.init_axis(x_servo, y_servo, MIN, MAX)
 
 def shutdownServos():
     print("STUB: shutdownServos()")
+    x_servo.enable(False)
+    y_servo.enable(False)
 
 def setServos(x, y):
     print("STUB: Updating servos to " + str(x) + ", " + str(y))
+    servo_control.tilt(x_servo, x)
+    servo_control.tilt(y_servo, y)
 
 def sendFrame():
     global run
@@ -214,6 +227,7 @@ def processLoop():
 
 
 if __name__ == "__main__":
+    setupServos()
  
     # Start Network thread
     tcpThread = threading.Thread(target = sendFrame)
@@ -221,8 +235,6 @@ if __name__ == "__main__":
     
     processThread = threading.Thread(target = processLoop)
     processThread.start()
-    
-    setupServos()
 
     captureLoop()
 
