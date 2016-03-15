@@ -95,8 +95,8 @@ def shutdownServos():
     global y_servo   
     print("STUB: shutdownServos()")
     servo_control.tilt_neutral(x_servo, y_servo, HOME)
-    x_servo.enable(False)
-    y_servo.enable(False)
+    #x_servo.enable(False)
+    #y_servo.enable(False)
 
 def setServos(x, y):
     global x_servo
