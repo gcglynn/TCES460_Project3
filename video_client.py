@@ -48,14 +48,18 @@ Y_PIN = 9 #6
 
 X_DAMPENER = 1.0
 Y_DAMPENER = .3
-X_D = 1.7
-Y_D = 1.7
+X_D = 1.4
+Y_D = 1.4
+X_I = 0
+Y_I = 0
 
 run = True
 x_servo=None
 y_servo=None
 prev_xBall = 0
 prev_yBall = 0
+integralX = 0
+integralY = 0
 
 def timepoint(name):
     ms = int(round(time.time() * 1000))
@@ -68,30 +72,30 @@ timepoint.lastTime = 0
 def controller(xBall, yBall):
     global prev_xBall
     global prev_yBall
-    if abs(xBall > 1):
-	if xBall < 0:
-		xBall = -1
-	else:
-		xBall = 1
-    if abs(yBall > 1):
-        if yBall < 0:
-                yBall = -1
-        else:
-                yBall = 1
-    x_range = (xBall+((xBall-prev_xBall)*X_D)) * (MAX*X_DAMPENER)
-    y_range = (yBall+((yBall-prev_yBall)*Y_D)) * (MAX*Y_DAMPENER)
-    if x_range > 500:
-    	x_range = 500
-    if x_range < -500:
-        x_range = -500
-    if y_range > 500:
-    	y_range = 500
-    if y_range < -500:
-    	y_range = -500
+    global integralX
+    global integralY
+    
+    xBall = numpy.clip(xBall, -1, 1)
+    yBall = numpy.clip(yBall, -1, 1)
+    
+    deltaX = xBall - prev_xBall
+    deltaY = yBall - prev_yBall
+    
+    integralX = numpy.clip(integralX + xBall, -1, 1)
+    integralY = numpy.clip(integralY + yBall, -1, 1)
+    
+    x_range = (xBall * X_DAMPENER + deltaX * X_D + integralX * X_I) * MAX
+    y_range = (yBall * Y_DAMPENER + deltaY * Y_D + integralY * Y_I) * MAX
+    
+    x_range = numpy.clip(x_range, -500, 500)
+    y_range = numpy.clip(y_range, -500, 500)
+ 
     x = int(x_range + HOME)
     y = int(y_range + HOME)
+    
     prev_xBall = xBall
     prev_yBAll = yBall
+    
     return x, y
 
 def setupServos():
