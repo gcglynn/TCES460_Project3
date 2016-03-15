@@ -41,14 +41,19 @@ MAX = 500
 MIN = 1500
 SWAP_XY = True
 INVERT_X = True
-INVERT_Y = False
+INVERT_Y = True
 
-X_PIN = 5
-Y_PIN = 6
+X_PIN = 3 #5
+Y_PIN = 9 #6
+
+X_DAMPENER = .45
+Y_DAMPENER = .6
 
 run = True
 x_servo=None
 y_servo=None
+prev_xBall = 0
+prev_yBall = 0
 
 def timepoint(name):
     ms = int(round(time.time() * 1000))
@@ -59,8 +64,22 @@ times = {}
 timepoint.lastTime = 0
 
 def controller(xBall, yBall):
-    x = int(xBall * MAX + HOME)
-    y = int(yBall * MAX + HOME)
+    global prev_xBall
+    global prev_yBall
+    if abs(xBall > 1):
+	if xBall < 0:
+		xBall = -1
+	else:
+		xBall = 1
+    if abs(yBall > 1):
+        if yBall < 0:
+                yBall = -1
+        else:
+                yBall = 1
+    x_range = (xBall+(xBall-prev_xBall)) * (MAX*X_DAMPENER)
+    y_range = (yBall+(yBall-prev_yBall)) * (MAX*Y_DAMPENER)
+    x = int(x_range + HOME)
+    y = int(y_range + HOME)
     return x, y
 
 def setupServos():
@@ -75,6 +94,7 @@ def shutdownServos():
     global x_servo
     global y_servo   
     print("STUB: shutdownServos()")
+    servo_control.tilt_neutral(x_servo, y_servo, HOME)
     x_servo.enable(False)
     y_servo.enable(False)
 
@@ -83,8 +103,12 @@ def setServos(x, y):
     global y_servo     
     if PRINT_SERVOS:
         print("STUB: Updating servos to " + str(x) + ", " + str(y))
-    servo_control.tilt(x_servo, x)
-    servo_control.tilt(y_servo, y)
+    if SWAP_XY:
+        servo_control.tilt(x_servo, y)
+        servo_control.tilt(y_servo, x)
+    else:
+        servo_control.tilt(x_servo, x)
+        servo_control.tilt(y_servo, y)
 
 def sendFrame():
     global run
@@ -137,7 +161,7 @@ if edgeFile:
 if SWAP_XY:
     temp = edgeX0
     edgeX0 = edgeY0
-    edgeY0 = edgeX0
+    edgeY0 = temp
     temp = edgeX1
     edgeX1 = edgeY1
     edgeY1 = temp
@@ -178,6 +202,8 @@ captureLoop.newFrame = None
 def processLoop():
     global frameCount 
     global run
+    global prev_xBall
+    global prev_yBall
     try:
         while run:
             frameStart = int(round(time.time() * 1000))
@@ -236,6 +262,9 @@ def processLoop():
                 if ENABLE_SERVOS:
                     xServo, yServo = controller(xBall, yBall)
                     setServos(xServo, yServo)
+
+	    prev_xBall = xBall
+	    prev_yBall = yBall
 
             sendFrame.number = frameCount
             sendFrame.frame = outputFrame
