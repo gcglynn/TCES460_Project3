@@ -46,10 +46,10 @@ INVERT_Y = True
 X_PIN = 3 #5
 Y_PIN = 9 #6
 
-X_DAMPENER = 1.0
-Y_DAMPENER = .3
-X_D = 1.4
-Y_D = 1.4
+X_DAMPENER = .8
+Y_DAMPENER = .1
+X_D = 5
+Y_D = 5
 X_I = 0
 Y_I = 0
 
