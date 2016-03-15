@@ -48,6 +48,8 @@ Y_PIN = 9 #6
 
 X_DAMPENER = .45
 Y_DAMPENER = .6
+X_D = .5
+Y_D = .5
 
 run = True
 x_servo=None
@@ -76,8 +78,8 @@ def controller(xBall, yBall):
                 yBall = -1
         else:
                 yBall = 1
-    x_range = (xBall+(xBall-prev_xBall)) * (MAX*X_DAMPENER)
-    y_range = (yBall+(yBall-prev_yBall)) * (MAX*Y_DAMPENER)
+    x_range = (xBall+((xBall-prev_xBall)*X_D)) * (MAX*X_DAMPENER)
+    y_range = (yBall+((yBall-prev_yBall)*Y_D)) * (MAX*Y_DAMPENER)
     if x_range > 500:
     	x_range = 500
     if x_range < -500:
