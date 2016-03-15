@@ -14,7 +14,6 @@ home=1000
 max=500
 min=1500
 
-
 def init_servo(pin, home):
 	servo=mraa.Pwm(pin)
         servo.period_ms(20)
@@ -37,7 +36,7 @@ def tilt_max():
 def tilt_min():
         tilt(y_servo, min)
         tilt(x_servo, min)
-	
+
 def init_axis():
 	tilt_min()
 	time.sleep(3)
@@ -45,16 +44,12 @@ def init_axis():
         tilt_max()
         time.sleep(3)
 
-
 #start of program
-y_servo=init_servo(y_pin, y_home)
-x_servo=init_servo(x_pin, x_home)
+y_servo=init_servo(y_pin, home)
+x_servo=init_servo(x_pin, home)
 
 tilt_neutral()
-time.sleep(2)
-init_axis()
-tilt_neutral()
-time.sleep(2)
-
+#tilt_max()
+#tilt_min()
 while(True):
 	pass
