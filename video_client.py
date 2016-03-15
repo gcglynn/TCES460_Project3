@@ -29,10 +29,12 @@ ERODE_KERNEL_SIZE = 3
 JPEG_QUALITY = 50
 
 PRINT_TIMES = False
-PRINT_FPS = True
+PRINT_FPS = False
 
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
+
+ENABLE_SERVOS = True
 
 run = True
 
@@ -43,6 +45,20 @@ def timepoint(name):
     times[name] = delta
 times = {}
 timepoint.lastTime = 0
+
+def controller(xBall, yBall):
+    x = int(xBall * 500 + 1000)
+    y = int(yBall * 500 + 1000)
+    return x, y
+
+def setupServos():
+    print("STUB: setupServos()")
+
+def shutdownServos():
+    print("STUB: shutdownServos()")
+
+def setServos(x, y):
+    print("STUB: Updating servos to " + str(x) + ", " + str(y))
 
 def sendFrame():
     global run
@@ -75,16 +91,7 @@ def sendFrame():
 sendFrame.frame = None        
 sendFrame.number = 0
 
-xRaw = 0
-yRaw = 0
-xBall = 0
-yBall = 0
-def getBallPos():
-    return (xBall, yBall)
-
 frameCount = 0
-def getFrameNumber():
-    return frameCount
 
 edgeX0 = 0
 edgeX1 = FRAME_WIDTH
@@ -100,16 +107,6 @@ if edgeFile:
     edgeY1 = int(edges[3])
     print("Read edges.txt:")
     print(edges[:4])
-
-def Edge(name):
-    if name is "top-left":
-        edgeX0 = xRaw
-        edgeY0 = yRaw
-    if name is "bottom-right":
-        edgeX1 = xRaw
-        edgeY1 = yRaw
-    else:
-        print("Edge: bad name")
 
 def captureLoop():
     global run
@@ -191,6 +188,10 @@ def processLoop():
 
                     timepoint("MarkBall")
 
+                if ENABLE_SERVOS:
+                    xServo, yServo = controller(xBall, yBall)
+                    setServos(xServo, yServo)
+
             sendFrame.number = frameCount
             sendFrame.frame = outputFrame
 
@@ -207,6 +208,7 @@ def processLoop():
         pass
 
     run = False
+    shutdownServos()
 
     print("Exiting")
 
@@ -216,8 +218,12 @@ if __name__ == "__main__":
     # Start Network thread
     tcpThread = threading.Thread(target = sendFrame)
     tcpThread.start()   
+    
     processThread = threading.Thread(target = processLoop)
     processThread.start()
+    
+    setupServos()
+
     captureLoop()
 
 
