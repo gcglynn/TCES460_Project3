@@ -46,10 +46,10 @@ INVERT_Y = True
 X_PIN = 3 #5
 Y_PIN = 9 #6
 
-X_DAMPENER = .45
-Y_DAMPENER = .6
-X_D = .5
-Y_D = .5
+X_DAMPENER = 1.0
+Y_DAMPENER = .3
+X_D = 1.7
+Y_D = 1.7
 
 run = True
 x_servo=None
